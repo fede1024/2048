@@ -58,77 +58,8 @@ def print_map(m, nl=True):
     if nl:
         print ""
 
-def move_left(m):
-    for i in xrange(4):
-        for j in xrange(1, 4):
-            y = j
-            while y > 0 and m[i][y-1] == 0:
-                m[i][y-1] = m[i][y]
-                m[i][y] = 0
-                y -= 1
-            if m[i][y-1] == m[i][y]:
-                m[i][y-1] = m[i][y-1]*2
-                m[i][y] = 0
-
 def inside_map(x, y):
     return x >= 0 and x < 4 and y >= 0 and y < 4
-
-def move(m, direction='l'):
-    if direction == 'l':
-        di = 0
-        dj = -1
-        i_start = 0
-        i_end = 4
-        i_step = 1
-        j_start = 0
-        j_end = 4
-        j_step = 1
-        mov = [[x, y] for x in xrange(i_start, i_end, i_step) for y in xrange(j_start, j_end, j_step)]
-    elif direction == 'r':
-        di = 0
-        dj = +1
-        i_start = 0
-        i_end = 4
-        i_step = 1
-        j_start = 3
-        j_end = -1
-        j_step = -1
-        mov = [[x, y] for x in xrange(i_start, i_end, i_step) for y in xrange(j_start, j_end, j_step)]
-    elif direction == 'd':
-        di = +1
-        dj = 0
-        i_start = 0
-        i_end = 4
-        i_step = 1
-        j_start = 3
-        j_end = -1
-        j_step = -1
-        mov = [[y, x] for x in xrange(i_start, i_end, i_step) for y in xrange(j_start, j_end, j_step)]
-    elif direction == 'u':
-        di = -1
-        dj = 0
-        i_start = 0
-        i_end = 4
-        i_step = 1
-        j_start = 0
-        j_end = 4
-        j_step = 1
-        mov = [[y, x] for x in xrange(i_start, i_end, i_step) for y in xrange(j_start, j_end, j_step)]
-
-    merged = {}
-    #for i in xrange(i_start, i_end, i_step):
-    #    for j in xrange(j_start, j_end, j_step):
-    for i, j in mov:
-        while inside_map(i+di, j+dj) and m[i+di][j+dj] == 0:
-            m[i+di][j+dj] = m[i][j]
-            m[i][j] = 0
-            j += dj
-            i += di
-        if inside_map(i+di, j+dj) and m[i+di][j+dj] == m[i][j] and \
-           not merged.get((i+di, j+dj)):
-            merged[(i+di, j+dj)] = 1
-            m[i+di][j+dj] *= 2
-            m[i][j] = 0
 
 def get_movements(size):
     return {'l': [[x, y] for x in xrange(0, 4) for y in xrange(0, 4, 1)],
@@ -154,20 +85,10 @@ def move(m, direction='l'):
             m[i+di][j+dj] *= 2
             m[i][j] = 0
 
-
-m = gen_map(10)
-print_map(m)
-print
-move(m, 'r')
-print_map(m)
-print
-move(m, 'l')
-print_map(m)
-
 def random_empty(m):
     n = randint(0, 15)
     k = 0
-    while True
+    while True:
         i = k%4
         j = k/4
         if m[i][j] == 0:
@@ -197,11 +118,3 @@ def play():
             print "You loose"
             break
 
-m = [[0, 4, 2, 2],
-     [2, 2, 0, 0],
-     [0, 2, 2, 0],
-     [2, 0, 0, 2]]
-
-print_map(m)
-move(m, 'u')
-print_map(m)
