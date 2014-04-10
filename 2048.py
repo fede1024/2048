@@ -36,84 +36,104 @@ class _GetchWindows:
         import msvcrt
         return msvcrt.getch()
 
+class Map:
+    data = None
+    height = None
+    width = None
 
-def gen_map(n):
-    m = [[0 for i in range(4)] for j in range(4)]
+    def __init__(self, h, w, start_count):
+        if h == 0 or w == 0:
+            raise Exception("Wrong dimensions.")
 
-    for i in xrange(n):
-        m[randint(0, 3)][randint(0, 3)] = 2
+        self.height = h
+        self.width = w
 
-    return m
+        self.data = [[0 for i in range(self.width)] for j in range(self.height)]
 
-def print_map(m, nl=True):
-    print "+-----+-----+-----+-----+"
-    for i in xrange(4):
-        for j in xrange(4):
-            if m[i][j] == 0:
-                print "|    ",
-            else:
-                print "|%4d"%(m[i][j]),
-        print "|"
-        print "+-----+-----+-----+-----+"
-    if nl:
-        print ""
+        for i in xrange(min(start_count, self.height*self.width)):
+            x, y = self.get_random_empty()
+            self.data[x][y] = 2
 
-def inside_map(x, y):
-    return x >= 0 and x < 4 and y >= 0 and y < 4
+    def get_random_empty(self):
+        squares = self.height*self.width
+        start_n = n = randint(0, squares-1)
+        k = 0
+        while True:
+            i = k/self.width
+            j = k%self.width
+            if self.data[i][j] == 0:
+                if n == 0:
+                    return [i, j]
+                n -= 1
+            k +=1
+            if k == squares:
+                if n == start_n: #no empty
+                    return None
+                k = 0
 
-def get_movements(size):
-    return {'l': [[x, y] for x in xrange(0, 4) for y in xrange(0, 4, 1)],
-            'r': [[x, y] for x in xrange(0, 4) for y in xrange(3, -1, -1)],
-            'd': [[y, x] for x in xrange(0, 4) for y in xrange(3, -1, -1)],
-            'u': [[y, x] for x in xrange(0, 4) for y in xrange(0, 4, 1)]}
+    def set_cell(self, x, y, value):
+        self.data[x][y] = value
 
-def move(m, direction='l'):
-    di, dj = {'l': [0, -1], 'r': [0, +1], 'd': [1, 0], 'u':[-1, 0]}[direction]
-    mov = get_movements(4)[direction]
+    def print_map(self, nl=True):
+        print "+-----"*self.width + "+"
+        for i in xrange(self.height):
+            for j in xrange(self.width):
+                if self.data[i][j] == 0:
+                    print "|    ",
+                else:
+                    print "|%4d"%(self.data[i][j]),
+            print "|"
+            print "+-----"*self.width + "+"
+        if nl:
+            print ""
 
-    merged = {}
+    def is_valid(self, x, y):
+        return x >= 0 and x < self.height and y >= 0 and y < self.width
 
-    for i, j in mov:
-        while inside_map(i+di, j+dj) and m[i+di][j+dj] == 0:
-            m[i+di][j+dj] = m[i][j]
-            m[i][j] = 0
-            j += dj
-            i += di
-        if inside_map(i+di, j+dj) and m[i+di][j+dj] == m[i][j] and \
-           not merged.get((i+di, j+dj)):
-            merged[(i+di, j+dj)] = 1
-            m[i+di][j+dj] *= 2
-            m[i][j] = 0
+    def get_movements(self):
+        return {'l': [[x, y] for x in xrange(0, self.height) for y in xrange(0, self.width, 1)],
+                'r': [[x, y] for x in xrange(0, self.height) for y in xrange(self.width-1, -1, -1)],
+                'd': [[y, x] for x in xrange(0, self.width) for y in xrange(self.height-1, -1, -1)],
+                'u': [[y, x] for x in xrange(0, self.width) for y in xrange(0, self.height, 1)]}
 
-def random_empty(m):
-    n = randint(0, 15)
-    k = 0
-    while True:
-        i = k%4
-        j = k/4
-        if m[i][j] == 0:
-            if n == 0:
-                return [i, j]
-            n -= 1
-        k = (k+1)%16
+    def move(self, direction='l'):
+        di, dj = {'l': [0, -1], 'r': [0, +1], 'd': [1, 0], 'u':[-1, 0]}[direction]
+        mov = self.get_movements()[direction]
 
-def play():
+        merged = {}
+        m = self.data
+
+        for i, j in mov:
+            while self.is_valid(i+di, j+dj) and m[i+di][j+dj] == 0:
+                m[i+di][j+dj] = m[i][j]
+                m[i][j] = 0
+                j += dj
+                i += di
+            if self.is_valid(i+di, j+dj) and m[i+di][j+dj] == m[i][j] and \
+                    not merged.get((i+di, j+dj)):
+                merged[(i+di, j+dj)] = True
+                m[i+di][j+dj] *= 2
+                m[i][j] = 0
+
+        self.data = m
+
+def play(height=4, width=4, init=2):
     getch = _Getch()
     keys = {"j":"d", "h":"l", "k":"r", "u":"u"}
-    m = gen_map(10)
+    m = Map(height, width, init)
     while True:
-        print_map(m)
+        m.print_map()
         char = getch()
         if char == "q":
             break
         if char not in keys:
             print "Unknown char."
             continue
-        move(m, keys[char])
+        m.move(keys[char])
 
-        p = random_empty(m)
+        p = m.get_random_empty()
         if p:
-            m[p[0]][p[1]] = 2
+            m.set_cell(p[0], p[1], 2)
         else:
             print "You loose"
             break
