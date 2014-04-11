@@ -316,10 +316,11 @@ def AI(height=4, width=4, init=2, interactive=True, depth=4):
                 for j in xrange(m.width):
                     p += m.data[i][j]
                     best_tile = max(best_tile, m.data[i][j])
+            t = round(time.time() - start_time, 2)
             print "Done, %d points in %d moves (best tile: %d)."%(p, moves, best_tile)
-            print "Time elapsed: %.1f"%(time.time() - start_time), "seconds"
+            print "Time elapsed:", t, "seconds"
             m.print_map()
-            return p, moves, best_tile
+            return p, moves, best_tile, t
 
         if interactive:
             print "Next move: ", r
