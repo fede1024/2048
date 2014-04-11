@@ -1,5 +1,6 @@
 import sys
 from random import randint
+import copy, time
 
 class _Getch:
     """Gets a single character from standard input.  Does not echo to the screen."""
@@ -10,7 +11,6 @@ class _Getch:
             self.impl = _GetchUnix()
 
     def __call__(self): return self.impl()
-
 
 class _GetchUnix:
     def __init__(self):
@@ -26,7 +26,6 @@ class _GetchUnix:
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
-
 
 class _GetchWindows:
     def __init__(self):
@@ -47,6 +46,8 @@ class Map:
 
         self.height = h
         self.width = w
+
+        self.movements = self.generate_movements()
 
         self.data = [[0 for i in range(self.width)] for j in range(self.height)]
 
@@ -74,6 +75,14 @@ class Map:
     def set_cell(self, x, y, value):
         self.data[x][y] = value
 
+    def get_empty_cells(self):
+        cells = []
+        for i in xrange(self.height):
+            for j in xrange(self.width):
+                if self.data[i][j] == 0:
+                    cells.append([i, j])
+        return cells
+
     def print_map(self, nl=True):
         print "+-----"*self.width + "+"
         for i in xrange(self.height):
@@ -90,7 +99,7 @@ class Map:
     def is_valid(self, x, y):
         return x >= 0 and x < self.height and y >= 0 and y < self.width
 
-    def get_movements(self):
+    def generate_movements(self):
         return {'l': [[x, y] for x in xrange(0, self.height) for y in xrange(0, self.width, 1)],
                 'r': [[x, y] for x in xrange(0, self.height) for y in xrange(self.width-1, -1, -1)],
                 'd': [[y, x] for x in xrange(0, self.width) for y in xrange(self.height-1, -1, -1)],
@@ -98,7 +107,7 @@ class Map:
 
     def move(self, direction='l'):
         di, dj = {'l': [0, -1], 'r': [0, +1], 'd': [1, 0], 'u':[-1, 0]}[direction]
-        mov = self.get_movements()[direction]
+        mov = self.movements[direction]
 
         merged = {}
         m = self.data
@@ -117,6 +126,20 @@ class Map:
 
         self.data = m
 
+    def get_copy(self):
+        return copy.deepcopy(self)
+
+    def equal(self, map):
+        if self.height != map.height or self.width != map.width:
+            return False
+
+        for i in xrange(self.height):
+            for j in xrange(self.width):
+                if self.data[i][j] != map.data[i][j]:
+                    return False
+
+        return True
+
 def play(height=4, width=4, init=2):
     getch = _Getch()
     keys = {"j":"d", "h":"l", "k":"r", "u":"u"}
@@ -130,6 +153,188 @@ def play(height=4, width=4, init=2):
             print "Unknown char."
             continue
         m.move(keys[char])
+
+        p = m.get_random_empty()
+        if p:
+            m.set_cell(p[0], p[1], 2)
+        else:
+            print "You loose"
+            break
+
+def heur_2(map):
+    return len(map.get_empty_cells())
+
+def heur_1(map):
+    s= 0
+    for i in xrange(map.height):
+        for j in xrange(map.width):
+            v = map.data[i][j]
+            s += v*v
+    return s
+
+m = Map(4, 4, 0)
+m.data[0][0] = 2
+m.data[1][0] = 2
+print heur_1(m)
+m.print_map()
+
+for mov in ['l', 'r', 'u', 'd']:
+    tmp = m.get_copy()
+    tmp.move(mov)
+    print heur_1(tmp)
+    tmp.print_map()
+
+def minmax(map, depth, my_turn):
+    if depth == 0:
+        return heur_1(map)
+
+    v = [0, None]
+    if my_turn:
+        v = [-10000, None]
+        for mov in ['l', 'r', 'u', 'd']:
+            tmp = map.get_copy()
+            tmp.move(mov)
+            res = [minmax(tmp, depth-1, not my_turn), mov]
+            print "ME"+"    "*(4-depth), res
+            v = max(v, res, key=lambda x: x[0])
+    else:
+        v = [10000, None]
+        for x, y in map.get_empty_cells():
+            tmp = map.get_copy()
+            tmp.set_cell(x, y, 2)
+            res = [minmax(tmp, depth-1, not my_turn), [x, y]]
+            print "AI"+"    "*(4-depth), res
+            v = min(v, res, key=lambda x: x[0])
+    return v[0]
+
+def minmax(map, depth, my_turn):
+    if depth == 0:
+        return heur_1(map)
+
+    v = 0
+    if my_turn:
+        v = -10000
+        for mov in ['l', 'r', 'u', 'd']:
+            tmp = map.get_copy()
+            tmp.move(mov)
+            n = minmax(tmp, depth-1, not my_turn)
+            if depth == 4:
+                print n, mov, heur_1(tmp)
+                tmp.print_map()
+            v = max(v, n)
+    else:
+        v = 10000
+        for x, y in map.get_empty_cells():
+            tmp = map.get_copy()
+            tmp.set_cell(x, y, 2)
+            v = min(v, minmax(tmp, depth-1, not my_turn))
+    return v
+
+def minmax(map, depth, my_turn):
+    if depth == 0 or len(map.get_empty_cells()) == 0:
+        return [heur_1(map), None]
+
+    v = 0
+    if my_turn:
+        v = -10000
+        best = None
+        for mov in ['l', 'r', 'u', 'd']:
+            tmp = map.get_copy()
+            tmp.move(mov)
+            n = minmax(tmp, depth-1, not my_turn)[0]
+            print "    "*(4-depth), mov, n, heur_1(tmp)
+            if n > v: #MAX
+                v = n
+                best = mov
+    else:
+        v = 10000
+        best = None
+        for x, y in map.get_empty_cells():
+            tmp = map.get_copy()
+            tmp.set_cell(x, y, 2)
+            n = minmax(tmp, depth-1, not my_turn)[0]
+            print "    "*(4-depth), [x, y], n, heur_1(tmp)
+            if n < v: #MIN
+                v = n
+                best = [x, y]
+    return v, best
+
+def minmax3(map, depth, my_turn):
+    if depth == 0:
+        return [heur_1(map), None]
+
+    v = 0
+    if my_turn:
+        v = None
+        best = None
+        change = None
+        for mov in ['l', 'r', 'u', 'd']:
+            tmp = map.get_copy()
+            tmp.move(mov)
+            if map.equal(tmp):
+                continue
+            change = True
+            n = minmax3(tmp, depth-1, not my_turn)[0]
+            #print "    "*(4-depth), mov, n, heur_1(tmp)
+            if v == None or n > v: #MAX
+                v = n
+                best = mov
+        if not change:
+            return [heur_1(map), None]
+    else:
+        v = None
+        best = None
+        for x, y in map.get_empty_cells():
+            tmp = map.get_copy()
+            tmp.set_cell(x, y, 2)
+            n = minmax3(tmp, depth-1, not my_turn)[0]
+            #print "    "*(4-depth), [x, y], n, heur_1(tmp)
+            if v == None or n < v: #MIN
+                v = n
+                best = [x, y]
+    return v, best
+
+m = Map(3, 3, 0)
+m.data = [[64, 16, 4],
+          [16,  8, 4],
+          [ 4,  2, 0]]
+m.print_map()
+
+def AI(height=4, width=4, init=2, interactive=True, depth=4):
+    start_time = time.time()
+    getch = _Getch()
+    m = Map(height, width, init)
+    moves = 0
+    while True:
+        if interactive:
+            m.print_map()
+        r = minmax3(m, depth, True)
+        if not r[1]:
+            p = 0
+            best_tile = 0
+            for i in xrange(m.height):
+                for j in xrange(m.width):
+                    p += m.data[i][j]
+                    best_tile = max(best_tile, m.data[i][j])
+            print "Done, %d points in %d moves (best tile: %d)."%(p, moves, best_tile)
+            print "Time elapsed: %.1f"%(time.time() - start_time), "seconds"
+            m.print_map()
+            return p, moves, best_tile
+
+        if interactive:
+            print "Next move: ", r
+            char = getch()
+        else:
+            char = " "
+
+        if char == "q":
+            break
+        elif char == " ":
+            m.move(r[1])
+            moves += 1
+        else:
+            print "Unknown char."
+            continue
 
         p = m.get_random_empty()
         if p:
