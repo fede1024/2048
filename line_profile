@@ -1,0 +1,125 @@
+Done, 4 points in 0 moves (best tile: 2).
+Time elapsed: 2.64 seconds
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+|     |   2 |     |
++-----+-----+-----+
+|     |     |     |
++-----+-----+-----+
+
+Done, 24 points in 10 moves (best tile: 8).
+Time elapsed: 17.64 seconds
++-----+-----+-----+
+|   8 |   2 |     |
++-----+-----+-----+
+|   8 |   2 |   2 |
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+
+Done, 48 points in 20 moves (best tile: 16).
+Time elapsed: 23.19 seconds
++-----+-----+-----+
+|   4 |  16 |   8 |
++-----+-----+-----+
+|  16 |   2 |     |
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+
+Done, 72 points in 30 moves (best tile: 32).
+Time elapsed: 26.9 seconds
++-----+-----+-----+
+|  32 |   4 |   2 |
++-----+-----+-----+
+|   8 |  16 |     |
++-----+-----+-----+
+|   8 |   2 |     |
++-----+-----+-----+
+
+Done, 92 points in 40 moves (best tile: 64).
+Time elapsed: 34.11 seconds
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+|   2 |  64 |   2 |
++-----+-----+-----+
+|  16 |   4 |   2 |
++-----+-----+-----+
+
+Done, 120 points in 50 moves (best tile: 64).
+Time elapsed: 38.2 seconds
++-----+-----+-----+
+|     |   8 |   4 |
++-----+-----+-----+
+|   2 |   8 |  64 |
++-----+-----+-----+
+|     |  32 |   2 |
++-----+-----+-----+
+
+Done, 138 points in 57 moves (best tile: 64).
+Time elapsed: 39.31 seconds
++-----+-----+-----+
+|   2 |  16 |   8 |
++-----+-----+-----+
+|  32 |  64 |   4 |
++-----+-----+-----+
+|   2 |   8 |   2 |
++-----+-----+-----+
+
+Wrote profile results to 2048.py.lprof
+Timer unit: 1e-06 s
+
+File: 2048.py
+Function: minimax at line 181
+Total time: 38.6301 s
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   181                                           @profile
+   182                                           def minimax(map, depth, my_turn):
+   183     45320       495303     10.9      1.3      empty_cells = map.get_empty_cells()
+   184     45320        38544      0.9      0.1      stop_treshold = 0# if len(empty_cells) >= 4 else -2
+   185                                           
+   186     45320        37424      0.8      0.1      if depth <= stop_treshold:
+   187                                                   #print ">>>", depth, stop_treshold, len(empty_cells)
+   188     38812       430264     11.1      1.1          return [heur_1(map), None]
+   189                                           
+   190      6508         5090      0.8      0.0      v = None
+   191      6508         5015      0.8      0.0      best = None
+   192                                           
+   193      6508         5247      0.8      0.0      if my_turn:
+   194      1524         1192      0.8      0.0          change = None
+   195      7620         7123      0.9      0.0          for mov in ['l', 'r', 'u', 'd']:
+   196      6096      4856211    796.6     12.6              tmp = map.get_copy()
+   197      6096       269447     44.2      0.7              tmp.move(mov)
+   198      6096        38471      6.3      0.1              if map.equal(tmp):
+   199      1112          920      0.8      0.0                  continue
+   200      4984         4478      0.9      0.0              change = True
+   201      4984        13009      2.6      0.0              n = minimax(tmp, depth-1, not my_turn)[0]
+   202                                                       #print "    "*(4-depth), mov, n, heur_1(tmp)
+   203      4984         4894      1.0      0.0              if v == None or n > v: #MAX
+   204      1935         1568      0.8      0.0                  v = n
+   205      1935         1574      0.8      0.0                  best = mov
+   206      1524         1320      0.9      0.0          if not change:
+   207                                                       #print ">>"+"    "*(4-depth), heur_1(map)
+   208                                                       #print "UPPA", depth, stop_treshold, len(empty_cells)
+   209         5           55     11.0      0.0              return [heur_1(map), None]
+   210                                               else:
+   211                                                   #empty_cells = map.get_empty_cells()
+   212     45262        48991      1.1      0.1          moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
+   213     45262        43232      1.0      0.1          for x, y, val in moves:
+   214     40278     32070921    796.2     83.0              tmp = map.get_copy()
+   215     40278        88962      2.2      0.2              tmp.set_cell(x, y, val)
+   216     40278       101007      2.5      0.3              n = minimax(tmp, depth-1, not my_turn)[0]
+   217                                                       #print "    "*(4-depth), [x, y], n, heur_1(tmp)
+   218                                                       #print ".   "*(4-depth), v, best
+   219     40278        45534      1.1      0.1              if v == None or n < v: #MIN
+   220                                                           #print "u>  "+"    "*(3-depth), n, [x, y]
+   221      5022         4254      0.8      0.0                  v = n
+   222      5022         4718      0.9      0.0                  best = [x, y]
+   223                                           
+   224                                               #print "+>  "+"    "*(3-depth), v, best
+   225      6503         5375      0.8      0.0      return v, best
+

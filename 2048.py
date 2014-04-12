@@ -179,13 +179,17 @@ def heur_1(map):
     return s
 
 def minimax(map, depth, my_turn):
-    if depth == 0:
+    empty_cells = map.get_empty_cells()
+    stop_treshold = 0# if len(empty_cells) >= 4 else -2
+
+    if depth <= stop_treshold:
+        #print ">>>", depth, stop_treshold, len(empty_cells)
         return [heur_1(map), None]
 
-    v = 0
+    v = None
+    best = None
+
     if my_turn:
-        v = None
-        best = None
         change = None
         for mov in ['l', 'r', 'u', 'd']:
             tmp = map.get_copy()
@@ -194,23 +198,29 @@ def minimax(map, depth, my_turn):
                 continue
             change = True
             n = minimax(tmp, depth-1, not my_turn)[0]
+            #print "    "*(4-depth), mov, n, heur_1(tmp)
             if v == None or n > v: #MAX
                 v = n
                 best = mov
         if not change:
+            #print ">>"+"    "*(4-depth), heur_1(map)
+            #print "UPPA", depth, stop_treshold, len(empty_cells)
             return [heur_1(map), None]
     else:
-        v = None
-        best = None
-        empty_cells = map.get_empty_cells()
+        #empty_cells = map.get_empty_cells()
         moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
-        for x, y, v in moves:
+        for x, y, val in moves:
             tmp = map.get_copy()
-            tmp.set_cell(x, y, 4)
+            tmp.set_cell(x, y, val)
             n = minimax(tmp, depth-1, not my_turn)[0]
+            #print "    "*(4-depth), [x, y], n, heur_1(tmp)
+            #print ".   "*(4-depth), v, best
             if v == None or n < v: #MIN
+                #print "u>  "+"    "*(3-depth), n, [x, y]
                 v = n
                 best = [x, y]
+
+    #print "+>  "+"    "*(3-depth), v, best
     return v, best
 
 def AI(height=4, width=4, init=2, interactive=False, depth=4):
@@ -257,4 +267,7 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4):
         else:
             print "You loose"
             break
+
+if __name__ == "__main__":
+    AI(3, 3, depth=4)
 
