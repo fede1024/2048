@@ -1,0 +1,8 @@
+p = [AI(3, 3, depth=4) for x in xrange(20)]
+
+
+172.8
+
+real    0m25.078s
+user    0m24.944s
+sys     0m0.048s

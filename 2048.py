@@ -210,9 +210,11 @@ def minimax(map, depth, my_turn):
         #empty_cells = map.get_empty_cells()
         moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
         for x, y, val in moves:
-            tmp = map.get_copy()
+            #tmp = map.get_copy()
+            tmp = map
             tmp.set_cell(x, y, val)
             n = minimax(tmp, depth-1, not my_turn)[0]
+            tmp.set_cell(x, y, 0)
             #print "    "*(4-depth), [x, y], n, heur_1(tmp)
             #print ".   "*(4-depth), v, best
             if v == None or n < v: #MIN
@@ -269,5 +271,7 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4):
             break
 
 if __name__ == "__main__":
-    AI(3, 3, depth=4)
+     AI(3, 3, depth=4)
+     #p = [AI(3, 3, depth=4) for x in xrange(2)]
+     #print sum(x[0] for x in p)/2.0
 
