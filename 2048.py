@@ -40,7 +40,14 @@ class Map:
     height = None
     width = None
 
-    def __init__(self, h, w, start_count):
+    def __init__(self, h, w, start_count, copy_from=None):
+        if copy_from:
+            self.height = copy_from.height
+            self.width = copy_from.width
+            self.data = [row[:] for row in copy_from.data]
+            self.movements = copy_from.movements
+            return
+
         if h == 0 or w == 0:
             raise Exception("Wrong dimensions.")
 
@@ -50,7 +57,6 @@ class Map:
         self.movements = self.generate_movements()
 
         self.data = [[0 for i in range(self.width)] for j in range(self.height)]
-
         for i in xrange(min(start_count, self.height*self.width)):
             x, y = self.get_random_empty()
             self.data[x][y] = 2
@@ -127,7 +133,7 @@ class Map:
         self.data = m
 
     def get_copy(self):
-        return copy.deepcopy(self)
+        return Map(0, 0, 0, copy_from=self)
 
     def equal(self, map):
         if self.height != map.height or self.width != map.width:
@@ -149,6 +155,7 @@ def new_cell_value():
 def play(height=4, width=4, init=2):
     getch = _Getch()
     keys = {"j":"d", "h":"l", "k":"r", "u":"u"}
+    print "Press h for left, k for right, j for down and u for up."
     m = Map(height, width, init)
     while True:
         m.print_map()
@@ -178,13 +185,12 @@ def heur_1(map):
             s += v*v
     return s
 
-def minimax(map, depth, my_turn):
+def minimax(map, depth, my_turn, heur):
     empty_cells = map.get_empty_cells()
     stop_treshold = 0# if len(empty_cells) >= 4 else -2
 
     if depth <= stop_treshold:
-        #print ">>>", depth, stop_treshold, len(empty_cells)
-        return [heur_1(map), None]
+        return [heur(map), None]
 
     v = None
     best = None
@@ -197,35 +203,26 @@ def minimax(map, depth, my_turn):
             if map.equal(tmp):
                 continue
             change = True
-            n = minimax(tmp, depth-1, not my_turn)[0]
-            #print "    "*(4-depth), mov, n, heur_1(tmp)
+            n = minimax(tmp, depth-1, not my_turn, heur)[0]
             if v == None or n > v: #MAX
                 v = n
                 best = mov
         if not change:
-            #print ">>"+"    "*(4-depth), heur_1(map)
-            #print "UPPA", depth, stop_treshold, len(empty_cells)
-            return [heur_1(map), None]
+            return [heur(map), None]
     else:
-        #empty_cells = map.get_empty_cells()
         moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
         for x, y, val in moves:
-            #tmp = map.get_copy()
             tmp = map
             tmp.set_cell(x, y, val)
-            n = minimax(tmp, depth-1, not my_turn)[0]
+            n = minimax(tmp, depth-1, not my_turn, heur)[0]
             tmp.set_cell(x, y, 0)
-            #print "    "*(4-depth), [x, y], n, heur_1(tmp)
-            #print ".   "*(4-depth), v, best
             if v == None or n < v: #MIN
-                #print "u>  "+"    "*(3-depth), n, [x, y]
                 v = n
                 best = [x, y]
 
-    #print "+>  "+"    "*(3-depth), v, best
     return v, best
 
-def AI(height=4, width=4, init=2, interactive=False, depth=4):
+def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_1):
     start_time = time.time()
     getch = _Getch()
     m = Map(height, width, init)
@@ -233,7 +230,7 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4):
     while True:
         if interactive:
             m.print_map()
-        r = minimax(m, depth, True)
+        r = minimax(m, depth, True, heur)
         if not r[1] or moves % 10 == 0:
             p = 0
             best_tile = 0
@@ -270,8 +267,26 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4):
             print "You loose"
             break
 
+def heur_3(map):
+    score = 0
+    for i in xrange(map.height):
+        inc = True
+        dec = True
+        for j in xrange(1, map.width):
+            d = map.data[i][j] - map.data[i][j-1]
+            if d > 0:
+                dec = False
+            elif d < 0:
+                inc = False
+        if not inc and not dec:
+            score -= 1
+        else:
+            score += 1
+    return score
+
 if __name__ == "__main__":
-     AI(3, 3, depth=4)
-     #p = [AI(3, 3, depth=4) for x in xrange(2)]
-     #print sum(x[0] for x in p)/2.0
+     #play(4, 4)
+     AI(4, 4, heur=heur_2)
+     #p = [AI(4, 4, depth=6) for x in xrange(5)]
+     #print sum(x[0] for x in p)/20.0
 

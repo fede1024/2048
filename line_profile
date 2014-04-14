@@ -1,0 +1,167 @@
+Done, 4 points in 0 moves (best tile: 2).
+Time elapsed: 0.21 seconds
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+|     |   2 |     |
++-----+-----+-----+
+|     |     |     |
++-----+-----+-----+
+
+Done, 30 points in 10 moves (best tile: 16).
+Time elapsed: 1.22 seconds
++-----+-----+-----+
+|  16 |   8 |   4 |
++-----+-----+-----+
+|     |     |     |
++-----+-----+-----+
+|   2 |     |     |
++-----+-----+-----+
+
+Done, 50 points in 20 moves (best tile: 32).
+Time elapsed: 1.81 seconds
++-----+-----+-----+
+|  32 |   2 |     |
++-----+-----+-----+
+|   8 |   2 |     |
++-----+-----+-----+
+|   4 |   2 |     |
++-----+-----+-----+
+
+Done, 76 points in 30 moves (best tile: 32).
+Time elapsed: 2.15 seconds
++-----+-----+-----+
+|  32 |  32 |   2 |
++-----+-----+-----+
+|   2 |     |   4 |
++-----+-----+-----+
+|   4 |     |     |
++-----+-----+-----+
+
+Done, 102 points in 40 moves (best tile: 64).
+Time elapsed: 2.33 seconds
++-----+-----+-----+
+|  64 |   8 |   4 |
++-----+-----+-----+
+|   2 |  16 |     |
++-----+-----+-----+
+|   4 |   4 |     |
++-----+-----+-----+
+
+Done, 122 points in 50 moves (best tile: 64).
+Time elapsed: 2.4 seconds
++-----+-----+-----+
+|  64 |  32 |   4 |
++-----+-----+-----+
+|   8 |   8 |   2 |
++-----+-----+-----+
+|   2 |   2 |     |
++-----+-----+-----+
+
+Done, 144 points in 60 moves (best tile: 64).
+Time elapsed: 2.65 seconds
++-----+-----+-----+
+|   2 |   4 |  64 |
++-----+-----+-----+
+|  64 |   4 |   2 |
++-----+-----+-----+
+|   4 |     |     |
++-----+-----+-----+
+
+Done, 166 points in 70 moves (best tile: 64).
+Time elapsed: 2.77 seconds
++-----+-----+-----+
+|   2 |  16 |  64 |
++-----+-----+-----+
+|  64 |   8 |   8 |
++-----+-----+-----+
+|   2 |   2 |     |
++-----+-----+-----+
+
+Done, 186 points in 80 moves (best tile: 128).
+Time elapsed: 2.99 seconds
++-----+-----+-----+
+|  32 |   2 |   2 |
++-----+-----+-----+
+| 128 |   4 |   2 |
++-----+-----+-----+
+|   8 |   8 |     |
++-----+-----+-----+
+
+Done, 208 points in 90 moves (best tile: 128).
+Time elapsed: 3.21 seconds
++-----+-----+-----+
+|   2 |  32 |   4 |
++-----+-----+-----+
+| 128 |   8 |   2 |
++-----+-----+-----+
+|  32 |     |     |
++-----+-----+-----+
+
+Done, 232 points in 99 moves (best tile: 128).
+Time elapsed: 3.27 seconds
++-----+-----+-----+
+| 128 |   2 |   4 |
++-----+-----+-----+
+|   2 |  64 |  16 |
++-----+-----+-----+
+|   4 |   8 |   4 |
++-----+-----+-----+
+
+Wrote profile results to 2048.py.lprof
+Timer unit: 1e-06 s
+
+File: 2048.py
+Function: minimax at line 187
+Total time: 2.3843 s
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   187                                           @profile
+   188                                           def minimax(map, depth, my_turn):
+   189     54889       612579     11.2     25.7      empty_cells = map.get_empty_cells()
+   190     54889        50470      0.9      2.1      stop_treshold = 0# if len(empty_cells) >= 4 else -2
+   191                                           
+   192     54889        49843      0.9      2.1      if depth <= stop_treshold:
+   193                                                   #print ">>>", depth, stop_treshold, len(empty_cells)
+   194     45978       562439     12.2     23.6          return [heur_1(map), None]
+   195                                           
+   196      8911         7688      0.9      0.3      v = None
+   197      8911         7544      0.8      0.3      best = None
+   198                                           
+   199      8911         7914      0.9      0.3      if my_turn:
+   200      2088         1777      0.9      0.1          change = None
+   201     10440        10004      1.0      0.4          for mov in ['l', 'r', 'u', 'd']:
+   202      8352        74538      8.9      3.1              tmp = map.get_copy()
+   203      8352       378391     45.3     15.9              tmp.move(mov)
+   204      8352        53890      6.5      2.3              if map.equal(tmp):
+   205      1529         1354      0.9      0.1                  continue
+   206      6823         6399      0.9      0.3              change = True
+   207      6823        17013      2.5      0.7              n = minimax(tmp, depth-1, not my_turn)[0]
+   208                                                       #print "    "*(4-depth), mov, n, heur_1(tmp)
+   209      6823         6984      1.0      0.3              if v == None or n > v: #MAX
+   210      2718         2369      0.9      0.1                  v = n
+   211      2718         2437      0.9      0.1                  best = mov
+   212      2088         1981      0.9      0.1          if not change:
+   213                                                       #print ">>"+"    "*(4-depth), heur_1(map)
+   214                                                       #print "UPPA", depth, stop_treshold, len(empty_cells)
+   215        16          178     11.1      0.0              return [heur_1(map), None]
+   216                                               else:
+   217                                                   #empty_cells = map.get_empty_cells()
+   218     54789        60043      1.1      2.5          moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
+   219     54789        55641      1.0      2.3          for x, y, val in moves:
+   220                                                       #tmp = map.get_copy()
+   221     47966        43576      0.9      1.8              tmp = map
+   222     47966        88447      1.8      3.7              tmp.set_cell(x, y, val)
+   223     47966       112707      2.3      4.7              n = minimax(tmp, depth-1, not my_turn)[0]
+   224     47966        93096      1.9      3.9              tmp.set_cell(x, y, 0)
+   225                                                       #print "    "*(4-depth), [x, y], n, heur_1(tmp)
+   226                                                       #print ".   "*(4-depth), v, best
+   227     47966        54009      1.1      2.3              if v == None or n < v: #MIN
+   228                                                           #print "u>  "+"    "*(3-depth), n, [x, y]
+   229      6880         6183      0.9      0.3                  v = n
+   230      6880         6805      1.0      0.3                  best = [x, y]
+   231                                           
+   232                                               #print "+>  "+"    "*(3-depth), v, best
+   233      8895         7997      0.9      0.3      return v, best
+
