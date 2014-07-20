@@ -174,10 +174,10 @@ def play(height=4, width=4, init=2):
             print "You loose"
             break
 
-def heur_2(map):
+def heur_emptys(map):
     return len(map.get_empty_cells())
 
-def heur_1(map):
+def heur_squared(map):
     s= 0
     for i in xrange(map.height):
         for j in xrange(map.width):
@@ -222,7 +222,45 @@ def minimax(map, depth, my_turn, heur):
 
     return v, best
 
-def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_1):
+def expectimax(map, depth, my_turn, heur):
+    empty_cells = map.get_empty_cells()
+    stop_treshold = 0# if len(empty_cells) >= 4 else -2
+
+    if depth <= stop_treshold:
+        return [heur(map), None]
+
+    v = None
+    best = None
+
+    if my_turn:
+        change = None
+        for mov in ['l', 'r', 'u', 'd']:
+            tmp = map.get_copy()
+            tmp.move(mov)
+            if map.equal(tmp):
+                continue
+            change = True
+            n = expectimax(tmp, depth-1, not my_turn, heur)[0]
+            if v == None or n > v: #MAX
+                v = n
+                best = mov
+        if not change:
+            return [heur(map), None]
+    else:
+        moves = [[x, y, 2] for x, y in empty_cells] + [[x, y, 4] for x, y in empty_cells]
+        moves_no = float(len(moves))
+        best = None
+        n = 0
+        for x, y, val in moves:
+            tmp = map
+            tmp.set_cell(x, y, val)
+            n += expectimax(tmp, depth-1, not my_turn, heur)[0]/moves_no
+            tmp.set_cell(x, y, 0)
+        v = n
+
+    return v, best
+
+def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_emptys):
     start_time = time.time()
     getch = _Getch()
     m = Map(height, width, init)
@@ -230,6 +268,7 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_1):
     while True:
         if interactive:
             m.print_map()
+        #r = minimax(m, depth, True, heur)
         r = minimax(m, depth, True, heur)
         if not r[1] or moves % 10 == 0:
             p = 0
@@ -243,7 +282,7 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_1):
             print "Time elapsed:", t, "seconds"
             m.print_map()
         if not r[1]:
-            return p, moves, best_tile, t
+            return p, moves, best_tile, t, m
 
         if interactive:
             print "Next move: ", r
@@ -267,26 +306,99 @@ def AI(height=4, width=4, init=2, interactive=False, depth=4, heur=heur_1):
             print "You loose"
             break
 
-def heur_3(map):
-    score = 0
-    for i in xrange(map.height):
-        inc = True
-        dec = True
-        for j in xrange(1, map.width):
-            d = map.data[i][j] - map.data[i][j-1]
-            if d > 0:
-                dec = False
-            elif d < 0:
-                inc = False
-        if not inc and not dec:
-            score -= 1
-        else:
-            score += 1
-    return score
+def sign(n):
+    return 1 if n >= 0 else -1
+
+def heur_monoton(map):
+    transp = [[r[i] for r in map.data] for i in xrange(len(map.data[0]))]
+
+    def get_score(data):
+        score = 0
+        for i in xrange(map.height):
+            d_p = data[i][1] - data[i][0]
+            for j in xrange(2, map.width):
+                d = data[i][j] - data[i][j-1]
+                if data[i][j] == 0:
+                    score += 1.5
+                if not d or sign(d) == sign(d_p):
+                    score +=1
+                else:
+                    score -= 1
+                d_p = d
+        return score
+
+    return get_score(map.data) + get_score(transp)
+
+def heur_top(map):
+    last = map.width - 1
+    transp = [[r[i] for r in map.data] for i in xrange(len(map.data[0]))]
+
+    def get_score(data):
+        score = 0
+        for col in data:
+            m = max(col)
+            if col[0] == m or col[last] == m:
+                score += 1
+        return score
+
+    return len(map.get_empty_cells()) + get_score(map.data) + get_score(transp)
+
+def heur_top2(map):
+    last = map.width - 1
+    transp = [[r[i] for r in map.data] for i in xrange(len(map.data[0]))]
+
+    def get_score(data):
+        score = 0
+        for col in data:
+            m = max(col)
+            if col[0] == m or col[last] == m:
+                score += m*m
+        return score
+
+    return heur_squared(map) + get_score(map.data) + get_score(transp)
+    #print heur_squared(map), get_score(map.data), get_score(transp)
 
 if __name__ == "__main__":
      #play(4, 4)
-     AI(4, 4, heur=heur_2)
-     #p = [AI(4, 4, depth=6) for x in xrange(5)]
-     #print sum(x[0] for x in p)/20.0
+     #AI(4, 4, heur=heur_2)
+     p1 = [AI(4, 4, depth=4, heur=heur_emptys) for x in xrange(10)]
+     p2 = [AI(4, 4, depth=4, heur=heur_squared) for x in xrange(10)]
+     p3 = [AI(4, 4, depth=4, heur=heur_monoton) for x in xrange(10)]
+     p4 = [AI(4, 4, depth=4, heur=heur_top2) for x in xrange(10)]
+     print sum(x[0] for x in p1)/10.0
+     print sum(x[0] for x in p2)/10.0
+     print sum(x[0] for x in p3)/10.0
+     print sum(x[0] for x in p4)/10.0
+     #print "ciao"
+
+#  EURISTIC      MINIM   EXPEC
+# heur_emptys   1441.0  1161.4
+# heur_squared  1158.0  1292.2
+# heur_monoton  1765.8  1484.0
+# heur_top2      950.2  1232.8
+
+
+#  Done, 2982 points in 1349 moves (best tile: 2048).
+#  Time elapsed: 43.01 seconds
+#  +-----+-----+-----+-----+
+#  |2048 |   4 |   2 |  16 |
+#  +-----+-----+-----+-----+
+#  |   4 | 256 |   8 | 512 |
+#  +-----+-----+-----+-----+
+#  |  32 |   4 |  16 |   4 |
+#  +-----+-----+-----+-----+
+#  |   8 |   2 |  64 |   2 |
+#  +-----+-----+-----+-----+
+
+#  Done, 4074 points in 1849 moves (best tile: 2048).
+#  Time elapsed: 1671.02 seconds
+#  +-----+-----+-----+-----+
+#  |   2 |  16 | 512 |  32 |
+#  +-----+-----+-----+-----+
+#  | 256 | 128 |  16 |   8 |
+#  +-----+-----+-----+-----+
+#  |1024 |  16 |   4 |   2 |
+#  +-----+-----+-----+-----+
+#  |2048 |   4 |   2 |   4 |
+#  +-----+-----+-----+-----+
 
